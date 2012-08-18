@@ -19,10 +19,12 @@ function do_test()
     cat ${FILENAME} | grep -v Executing | grep -v PASS | awk '{print $6" "$8}' | grep -v queryabort > processed.${FILENAME}
 }
 
-for branch in master; do
+for branch in master repart_preserving_fix; do
     for count in 1 2; do
 	for mode in 0 1; do
-	    do_test $branch $count 0 10000
+	    for tile_size in 10000; do
+		do_test $branch $count $mode $tile_size
+	    done;
 	done;
     done;
 done;
