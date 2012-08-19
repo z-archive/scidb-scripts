@@ -25,10 +25,10 @@ function do_test()
     cat ${FILENAME} | grep -v Executing | grep -v PASS | awk '{print $6" "$8}' | grep -v queryabort | tee -a ${PROCESSED}
 }
 
-for branch in my_master repart_preserving_fix; do
-    for count in 1 2; do
-	for mode in 0 1; do
-	    for tile_size in 10000; do
+for tile_size in 10000 5; do
+    for branch in my_master repart_preserving_fix; do
+	for count in 1 2; do
+	    for mode in 0 1; do
 		do_test $branch $count $mode $tile_size
 	    done;
 	done;
