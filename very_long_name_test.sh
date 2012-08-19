@@ -21,7 +21,7 @@ function do_test()
     echo "NODE=$2"                    | tee -a ${PROCESSED}
     echo "REPART_ENABLE_TILE_MODE=$3" | tee -a ${PROCESSED}
     echo "TILE_SIZE=$4"               | tee -a ${PROCESSED}
-    ../../bin/scidbtestharness --root-dir=testcases/ --suite-id=checkin.newaql 2>&1| tee ${FILENAME}
+    ../../bin/scidbtestharness --root-dir=testcases/ --suite-id=checkin 2>&1| tee ${FILENAME}
     cat ${FILENAME} | grep -v Executing | grep -v PASS | awk '{print $6" "$8}' | grep -v queryabort | tee -a ${PROCESSED}
 }
 

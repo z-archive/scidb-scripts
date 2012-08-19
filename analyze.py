@@ -4,7 +4,7 @@ import os
 import sys
 import itertools
 
-KEY_LIST = ['tile_mode', 'tile_size', 'branch', 'node']
+KEY_LIST = ['tile_mode', 'tile_size', 'node', 'branch']
 PREFIX_DICT = dict(branch='BRANCH=', 
                    node='NODE=',
                    tile_mode='REPART_ENABLE_TILE_MODE=',
