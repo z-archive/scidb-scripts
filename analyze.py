@@ -4,7 +4,7 @@ import os
 import sys
 import itertools
 
-KEY_LIST = ['tile_mode', 'tile_size', 'node', 'branch']
+KEY_LIST = ['tile_mode', 'tile_size', 'branch', 'node']
 PREFIX_DICT = dict(branch='BRANCH=', 
                    node='NODE=',
                    tile_mode='REPART_ENABLE_TILE_MODE=',
@@ -29,12 +29,13 @@ def parse_header(data):
 def collect_header(result, header):
     for key in KEY_LIST:
         if key in result:
-            result[key] = set(result[key])
+            if type(result[key]) == list:
+                result[key] = set(result[key])
         else:
             result[key] = set()
         result[key].add(header[key])
     for key in KEY_LIST:
-        result[key] = sorted(list(set(result[key])))
+        result[key] = sorted(list(result[key]))
     return result
     
 
@@ -114,12 +115,12 @@ def print_header(header):
     def action(actual, key, value):
         return actual + ['%s=%s' % (key, value)]
     for item in zip(*list(walk(header, action=action, initial=[]))):
-        print '\t'.join(item)
+        print '\t'.join(['test_name'] + list(item))
 
 def print_data(header, data):
     def action(actual, _, value):
         return actual[value]
-    for test_name in data:
+    for test_name in sorted(data):
         result = walk(header, action=action, initial=data[test_name])
         print '\t'.join([test_name] + list(result))
 
