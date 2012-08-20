@@ -13,8 +13,9 @@ function do_test()
     killall scidb && sleep 5 || true
     killall -9 scidb && sleep 5 || true
     ./runN.py $2 scidb --istart
-    sleep 5
+    sleep 15
     ../../bin/iquery -aq "load_library('system')"
+    sleep 15
     export FILENAME=node-$2_branch-$1_repart-tile-mode-$3_tile_size-$4
     export PROCESSED=processed.${FILENAME}
     echo "BRANCH=$1"                  | tee ${PROCESSED}
