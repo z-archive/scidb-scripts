@@ -18,8 +18,7 @@ export TILE_MODE=${4=0}
 export TILE_SIZE=${5=0}
 
 export SUITE_NAME_CMD=" --suite-id=${SUITE_NAME}"
-test TILE_MODE && unset REPART_ENABLE_TILE_MODE || export REPART_ENABLE_TILE_MODE=1
-test TILE_SIZE && unset TILE_SIZE
+export REPART_ENABLE_TILE_MODE=${TILE_MODE}
 
 export SCIDB_PATH=${SCIDB_PATH=/storage/work/scidb}
 export P4_PATH=${P4_PATH=/storage/work/p4}
@@ -68,6 +67,7 @@ function build()
 
 function restart()
 {
+    find ${BIN} -name "*.log" -exec rm -f {} +
     killall scidb && sleep ${WAIT_TIMEOUT} || true
     killall -9 scidb && sleep ${WAIT_TIMEOUT} || true
     (cd ${HARNESS} && ./runN.py ${NODE_COUNT} scidb --istart)
@@ -85,9 +85,11 @@ function run_harness()
 
 function process_result()
 {
+    (cd ${SCIDB_PATH}; find bin -name "*.log" | xargs tar ${TESTCASES}/scidb_log.tar.gz)
     cp ${LOG} ${TESTCASES}
     rm -f ${ARCHIVE}
     (cd ${HARNESS} && tar vfzc ${ARCHIVE} testcases)
+    rm -f ${TESTCASES}/scidb_log.tar.gz
     rm -f ${TESTCASES}/${LOG_FILENAME}.log
     sleep 1
     echo "BRANCH=${BRANCH_NAME}"    | tee ${PROCESSED}
