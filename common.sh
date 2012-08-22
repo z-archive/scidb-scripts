@@ -1,6 +1,6 @@
 #!/bin/sh
 
-set -eux
+set -ux
 
 mkdir -p general
 mkdir -p result
@@ -65,17 +65,27 @@ function build()
     done;
 }
 
-function restart()
+function stop()
 {
     find ${BIN} -name "*.log" -exec rm -f {} +
     killall scidb && sleep ${WAIT_TIMEOUT} || true
     killall -9 scidb && sleep ${WAIT_TIMEOUT} || true
+}
+
+function start()
+{
     (cd ${HARNESS} && ./runN.py ${NODE_COUNT} scidb --istart)
     sleep ${SCIDB_KILL_TIMEOUT}
     for PLUGIN in ${PLUGIN_LIST}; do
 	${IQUERY} -aq "load_library('${PLUGIN}')";
     done;
     sleep ${SCIDB_KILL_TIMEOUT}
+}
+
+function restart()
+{
+    stop
+    start
 }
 
 function run_harness()
@@ -85,13 +95,12 @@ function run_harness()
 
 function process_result()
 {
-    (cd ${SCIDB_PATH}; find bin -name "*.log" | xargs tar vfzc ${TESTCASES}/scidb_log.tar.gz)
+    (cd ${SCIDB_PATH}; find bin -name "*.log" | xargs tar vfzc ${TESTCASES}/scidb_log.tar.gz) || true
     cp ${LOG} ${TESTCASES}
     rm -f ${ARCHIVE}
-    (cd ${HARNESS} && tar vfzc ${ARCHIVE} testcases)
+    (cd ${HARNESS} && tar vfzc ${ARCHIVE} testcases 1>/dev/null 2>&1) || true
     rm -f ${TESTCASES}/scidb_log.tar.gz
     rm -f ${TESTCASES}/${LOG_FILENAME}.log
-    sleep 1
     echo "BRANCH=${BRANCH_NAME}"    | tee ${PROCESSED}
     echo "NODE=${NODE_COUNT}"      | tee -a ${PROCESSED}
     echo "TILE_MODE=${TILE_MODE}" | tee -a ${PROCESSED}
@@ -101,8 +110,9 @@ function process_result()
 
 function run()
 {
-    build 2>&1          | tee build/${LOG_FILENAME}
-    restart 2>&1        | tee restart/${LOG_FILENAME}
-    run_harness;
+    build 2>&1   | tee build/${LOG_FILENAME}
+    restart 2>&1 | tee restart/${LOG_FILENAME}
+    run_harness
+    stop | tee -a restart/${LOG_FILENAME}
     process_result
 }

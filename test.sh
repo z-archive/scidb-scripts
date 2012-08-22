@@ -1,6 +1,6 @@
 #!/bin/sh
 
-set -eux
+set -ux
 
 export suite=${suite=checkin}
 export branch=${branch=my_master}
