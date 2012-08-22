@@ -5,41 +5,43 @@ set -eux
 export BRANCH_NAME=${1}
 export NODE_COUNT=${2}
 export SUITE_NAME=${3}
-export TILE_MODE=${4}
-export TILE_SIZE=${5}
+export TILE_MODE=${4=0}
+export TILE_SIZE=${5=0}
 
-test SUITE_NAME && export SUITE_NAME_CMD=" --suite-id=${SUITE_NAME}"
-test TILE_MODE && export REPART_ENABLE_TILE_MODE=1 || unset REPART_ENABLE_TILE_MODE
-test TILE_SIZE && export TILE_SIZE=${TILE_SIZE} || unset TILE_SIZE
+export SUITE_NAME_CMD=" --suite-id=${SUITE_NAME}"
+test TILE_MODE && unset REPART_ENABLE_TILE_MODE || export REPART_ENABLE_TILE_MODE=1
+test TILE_SIZE && unset TILE_SIZE
 
-test -z SCIDB_PATH || export SCIDB_PATH=/storage/work/scidb
-test -z P4_PATH || export P4_PATH=/storage/work/p4
-test -z SCIDB_KILL_TIMEOUT || export SCIDB_KILL_TIMEOUT=15
-test -z WAIT_TIMEOUT || export WAIT_TIMEOUT=5
+export SCIDB_PATH=${SCIDB_PATH=/storage/work/scidb}
+export P4_PATH=${P4_PATH=/storage/work/p4}
+export SCIDB_KILL_TIMEOUT=${SCIDB_KILL_TIMEOUT=15}
+export WAIT_TIMEOUT=${WAIT_TIMEOUT=5}
 
-export TESTCASES=${SCIDB_PATH}/tests/harness/testcases
-export IQUERY=${SCIDB_PATH}/bin/iquery
-export HARNESS=${SCIDB_PATH}/bin/scidbtestharness
-export WD=${SCIDB_PATH}/tests/harness
+export BIN=${SCIDB_PATH}/bin
+export IQUERY=${BIN}/iquery
+export SCIDBTESTHARNESS=${BIN}/scidbtestharness
+export HARNESS=${SCIDB_PATH}/tests/harness
+export TESTCASES=${HARNESS}/testcases
+export WD=`pwd`
 
-export FILENAME=${SUITE_NAME}.${BRANCH_NAME}.node-${NODE_COUNT}.tile_mode-${TILE_MODE}.tile_size-${TILE_SIZE}
+export FILENAME=${SUITE_NAME}.${BRANCH_NAME}.node-${NODE_COUNT}.tile_mode-${TILE_MODE}.tile_size-${TILE_SIZE=default}
 export LOG=${WD}/${FILENAME}.log
 export PROCESSED=${WD}/processed.{$LOG}
 export ARCHIVE=${WD}/archive.${FILENAME}.tar.gz
 
 function build()
 {
-    export CC="ccache gcc"
-    export CXX="ccache g++"
+    export CC="/bin/ccache /bin/gcc"
+    export CXX="/bin/ccache /bin/g++"
     test -z CMAKE_BUILD_TYPE || export CMAKE_BUILD_TYPE=Debug
-    export CMAKE="cmake . -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
+    export CMAKE="/bin/cmake . -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
 
-    git checkout ${BRANCH_NAME};
+    (cd ${SCIDB_PATH} && git checkout ${BRANCH_NAME})
     (cd ${SCIDB_PATH} && rm -f CMakeCache.txt)
     (cd ${SCIDB_PATH} && ${CMAKE})
     (cd ${SCIDB_PATH} && make -j5)
 
-    git checkout ${BRANCH_NAME};
+    (cd ${P4_PATH} && git checkout ${BRANCH_NAME})
     (cd ${P4_PATH} && rm -f CMakeCache.txt)
     (cd ${P4_PATH} && ${CMAKE} -DSCIDB_SOURCE_DIR=${SCIDB_PATH})
     (cd ${P4_PATH} && make -j5)
@@ -49,7 +51,7 @@ function restart()
 {
     killall scidb && sleep ${WAIT_TIMEOUT} || true
     killall -9 scidb && sleep ${WAIT_TIMEOUT} || true
-    ./runN.py ${NODE_COUNT} scidb --istart
+    (cd ${HARNESS} && ./runN.py ${NODE_COUNT} scidb --istart)
     sleep ${SCIDB_KILL_TIMEOUT}
     ${IQUERY} -aq "load_library('system')"
     ${IQUERY} -aq "load_library('p4_msg')"
@@ -60,7 +62,7 @@ function restart()
 
 function do_test()
 {
-    ${HARNESS} --root-dir=${TESTCASES}${SUITE_NAME_CMD} 2>&1 | tee ${LOG}
+    ${SCIDBTESTHARNESS} --root-dir=${TESTCASES}${SUITE_NAME_CMD} 2>&1 | tee ${LOG}
 }
 
 function process_result()
@@ -69,7 +71,7 @@ function process_result()
     cp ${LOG} ${TESTCASES}
     rm -f ${ARCHIVE}
     tar vfzc ${ARCHIVE} ${TESTCASES}
-    tail -f ${LOG}
+    rm -f ${TESTCASES}/${FILENAME}.log
     sleep 1
     echo "BRANCH=${BRANCH_NAME}"    | tee ${PROCESSED}
     echo "NODE=${NODE_COUNT}"      | tee -a ${PROCESSED}
@@ -78,7 +80,7 @@ function process_result()
     cat ${LOG} | grep -v Executing | grep -v PASS | awk '{print $6" "$8}' | grep -v queryabort | tee -a processed.{$LOG}
 }
 
-function all()
+function run()
 {
     build
     restart
