@@ -34,7 +34,7 @@ export WD=`pwd`
 
 export FILENAME=${SUITE_NAME}.${BRANCH_NAME}.node-${NODE_COUNT}.tile_mode-${TILE_MODE}.tile_size-${TILE_SIZE=default}
 export LOG_FILENAME=${FILENAME}.log
-export LOG=${WD}/${LOG_FILENAME}
+export LOG=${WD}/harness/${LOG_FILENAME}
 export PROCESSED=${WD}/result/${LOG_FILENAME}
 export ARCHIVE=${WD}/archive/${FILENAME}.tar.gz
 
@@ -101,6 +101,6 @@ function run()
 {
     build 2>&1          | tee build/${LOG_FILENAME}
     restart 2>&1        | tee restart/${LOG_FILENAME}
-    run_harness         | tee harness/${LOG_FILENAME}
+    run_harness
     process_result 2>&1
 }
