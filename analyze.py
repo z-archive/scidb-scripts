@@ -7,7 +7,7 @@ import itertools
 KEY_LIST = ['tile_mode', 'tile_size', 'node', 'branch']
 PREFIX_DICT = dict(branch='BRANCH=', 
                    node='NODE=',
-                   tile_mode='REPART_ENABLE_TILE_MODE=',
+                   tile_mode='TILE_MODE=',
                    tile_size='TILE_SIZE=')
 
 def parse_header(data):
