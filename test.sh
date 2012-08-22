@@ -4,7 +4,6 @@ set -eux
 
 export suite=${suite=checkin}
 export branch=${branch=my_master}
-
 echo "" > ${branch}.log
 
 for tile_size in 0; do
