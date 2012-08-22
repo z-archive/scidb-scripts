@@ -85,7 +85,7 @@ function run_harness()
 
 function process_result()
 {
-    (cd ${SCIDB_PATH}; find bin -name "*.log" | xargs tar ${TESTCASES}/scidb_log.tar.gz)
+    (cd ${SCIDB_PATH}; find bin -name "*.log" | xargs tar vfzc ${TESTCASES}/scidb_log.tar.gz)
     cp ${LOG} ${TESTCASES}
     rm -f ${ARCHIVE}
     (cd ${HARNESS} && tar vfzc ${ARCHIVE} testcases)
@@ -103,6 +103,6 @@ function run()
 {
     build 2>&1          | tee build/${LOG_FILENAME}
     restart 2>&1        | tee restart/${LOG_FILENAME}
-    run_harness
-    process_result 2>&1
+    run_harness;
+    process_result
 }
