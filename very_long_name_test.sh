@@ -15,7 +15,9 @@ function do_test()
     ./runN.py $2 scidb --istart
     sleep 15
     ../../bin/iquery -aq "load_library('system')"
-    sleep 15
+    ../../bin/iquery -aq "load_library('p4_msg')"
+    ../../bin/iquery -aq "load_library('linear_algebra')"
+    ../../bin/iquery -aq "load_library('timeseries')"
     export FILENAME=node-$2_branch-$1_repart-tile-mode-$3_tile_size-$4
     export PROCESSED=processed.${FILENAME}
     export ARCHIVE=archive.${FILENAME}.tar.gz
@@ -23,12 +25,12 @@ function do_test()
     echo "NODE=$2"                    | tee -a ${PROCESSED}
     echo "REPART_ENABLE_TILE_MODE=$3" | tee -a ${PROCESSED}
     echo "TILE_SIZE=$4"               | tee -a ${PROCESSED}
-    ../../bin/scidbtestharness --root-dir=testcases  2>&1| tee ${FILENAME}
+    ../../bin/scidbtestharness --root-dir=testcases --suite-id=checkin.newaql 2>&1| tee ${FILENAME}
     rm -f ${ARCHIVE}
     tar vfzc ${ARCHIVE} testcases
     cat ${FILENAME} | grep -v Executing | grep -v PASS | awk '{print $6" "$8}' | grep -v queryabort | tee -a ${PROCESSED}
 }
-for tile_size in 10000 5; do
+for tile_size in 10000; do
     for branch in my_master repart_preserving_fix; do
 	for count in 1 2; do
 	    for mode in 0 1; do
