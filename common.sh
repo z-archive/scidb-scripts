@@ -82,6 +82,6 @@ function all()
 {
     build
     restart
-    #do_test
+    do_test
     process_result
 }
