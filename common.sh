@@ -2,8 +2,8 @@
 
 set -eux
 
-mkdir -p all
-mkdir -p processed
+mkdir -p general
+mkdir -p result
 mkdir -p archive
 mkdir -p build
 mkdir -p restart
@@ -35,7 +35,7 @@ export WD=`pwd`
 export FILENAME=${SUITE_NAME}.${BRANCH_NAME}.node-${NODE_COUNT}.tile_mode-${TILE_MODE}.tile_size-${TILE_SIZE=default}
 export LOG_FILENAME=${FILENAME}.log
 export LOG=${WD}/${LOG_FILENAME}
-export PROCESSED=${WD}/processed/{$LOG}
+export PROCESSED=${WD}/result/${LOG_FILENAME}
 export ARCHIVE=${WD}/archive/${FILENAME}.tar.gz
 
 PLUGIN_LIST="system timeseries linear_algebra"
@@ -87,7 +87,7 @@ function process_result()
 {
     cp ${LOG} ${TESTCASES}
     rm -f ${ARCHIVE}
-    tar vfzc ${ARCHIVE} ${TESTCASES}
+    (cd ${HARNESS} && tar vfzc ${ARCHIVE} testcases)
     rm -f ${TESTCASES}/${LOG_FILENAME}.log
     sleep 1
     echo "BRANCH=${BRANCH_NAME}"    | tee ${PROCESSED}
