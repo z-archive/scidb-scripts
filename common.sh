@@ -2,6 +2,13 @@
 
 set -eux
 
+mkdir -p all
+mkdir -p processed
+mkdir -p archive
+mkdir -p build
+mkdir -p restart
+mkdir -p harness
+
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/lib64/openmpi/lib
 
 export BRANCH_NAME=${1}
@@ -26,9 +33,10 @@ export TESTCASES=${HARNESS}/testcases
 export WD=`pwd`
 
 export FILENAME=${SUITE_NAME}.${BRANCH_NAME}.node-${NODE_COUNT}.tile_mode-${TILE_MODE}.tile_size-${TILE_SIZE=default}
-export LOG=${WD}/${FILENAME}.log
-export PROCESSED=${WD}/processed.{$LOG}
-export ARCHIVE=${WD}/archive.${FILENAME}.tar.gz
+export LOG_FILENAME=${FILENAME}.log
+export LOG=${WD}/${LOG_FILENAME}
+export PROCESSED=${WD}/processed/{$LOG}
+export ARCHIVE=${WD}/archive/${FILENAME}.tar.gz
 
 PLUGIN_LIST="system timeseries linear_algebra"
 SO_LIST="p4_msg"
@@ -70,30 +78,29 @@ function restart()
     sleep ${SCIDB_KILL_TIMEOUT}
 }
 
-function do_test()
+function run_harness()
 {
     (cd ${HARNESS} && ${SCIDBTESTHARNESS} --root-dir=${TESTCASES}${SUITE_NAME_CMD} 2>&1 | tee ${LOG})
 }
 
 function process_result()
 {
-    rm -f ${LOG}
     cp ${LOG} ${TESTCASES}
     rm -f ${ARCHIVE}
     tar vfzc ${ARCHIVE} ${TESTCASES}
-    rm -f ${TESTCASES}/${FILENAME}.log
+    rm -f ${TESTCASES}/${LOG_FILENAME}.log
     sleep 1
     echo "BRANCH=${BRANCH_NAME}"    | tee ${PROCESSED}
     echo "NODE=${NODE_COUNT}"      | tee -a ${PROCESSED}
     echo "TILE_MODE=${TILE_MODE}" | tee -a ${PROCESSED}
     echo "TILE_SIZE=${TILE_SIZE}" | tee -a ${PROCESSED}
-    cat ${LOG} | grep -v Executing | grep -v PASS | awk '{print $6" "$8}' | grep -v queryabort | tee -a processed.{$LOG}
+    cat ${LOG} | grep -v Executing | grep -v PASS | awk '{print $6" "$8}' | grep -v queryabort | tee -a ${PROCESSED}
 }
 
 function run()
 {
-    build
-    restart
-    do_test
-    process_result
+    build 2>&1          | tee build/${LOG_FILENAME}
+    restart 2>&1        | tee restart/${LOG_FILENAME}
+    run_harness         | tee harness/${LOG_FILENAME}
+    process_result 2>&1
 }
